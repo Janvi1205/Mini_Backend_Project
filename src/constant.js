@@ -1,0 +1,1 @@
+export const DB_NAME="janvisdb" //we gave the name here in constant coz if in future if i have to change the name then instead of changing in the all the files i will simply have to change the name here only!
