@@ -35,59 +35,56 @@ const registerUser = asyncHandler(async (req, res) => {  //as we have already ma
 
 
     //Vaidation
-     const existeduser= User.findOne({//using this User we can contact with the database and validate things  as it is connected to our db 
-        $or:[{username},{email}]
-    }) 
+    const existeduser = await User.findOne({//using this User we can contact with the database and validate things  as it is connected to our db 
+        $or: [{ username }, { email }]
+    })
 
-    if(existeduser)
-    {
+    if (existeduser) {
         throw new Error("user with this email or username already exist");
 
 
     }
 
-    const avatarLocalAvatar= req.files?.avatar[0]?.path //using this we can take the path of the file stree in our local server using multer 
-    const coverImageLocalpath=req.files?.avatar[0]?.path   
+    const avatarLocalAvatar = req.files?.avatar?.[0]?.path;//using this we can take the path of the file stree in our local server using multer 
+    const coverImageLocalpath = req.files?.coverImage?.[0]?.path;
 
-    if(!avatarLocalAvatar)
-    {
+    if (!avatarLocalAvatar) {
         throw new Error("Avatar file is required")
     }
-    if(!coverImageLocalpath)
-    {
-        throw new Error("coverImage file is required")
-    }
+
 
 
     //uploading on cloudinary
 
-     const avatar=await uploadonCloudinary(avatarLocalAvatar);
+    const avatar = await uploadonCloudinary(avatarLocalAvatar);
+    let coverImage;
+    if (coverImageLocalpath) {
+       coverImage = await uploadonCloudinary(coverImageLocalpath);
+    }
 
 
+    //creating user and uploading details on DB
 
-     //creating user and uploading details on DB
-
-     const user=await User.create({
+    const user = await User.create({
         fullname,
-        avatar:avatar.url,
-        coverImage:coverImage?.url||"",
+        avatar: avatar.url,
+        coverImage: coverImage?.url || "",
         email,
         password,
-        username:username.toLowerCase() 
-     })
+        username: username.toLowerCase()
+    })
 
-     const  createdUser=await User.findById(user._id).select(//best way to chck if user is created or not 
-         "-password -refreshToken"  //it means apart from these everything will come in the createdUser 
-     ) 
+    const createdUser = await User.findById(user._id).select(//best way to chck if user is created or not 
+        "-password -refreshToken"  //it means apart from these everything will come in the createdUser 
+    )
 
-     if(!createdUser)
-     {
+    if (!createdUser) {
         throw new Error("Something went wrong while registering the user ")
-     }
+    }
 
-     //send response
+    //send response
 
-     return res.status(201).json({createdUser});
+    return res.status(201).json({ createdUser });
 })
 
 export default registerUser;
