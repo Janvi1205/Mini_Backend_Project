@@ -87,4 +87,32 @@ const registerUser = asyncHandler(async (req, res) => {  //as we have already ma
     return res.status(201).json({ createdUser });
 })
 
-export default registerUser;
+const loginUser=asyncHandler(async(req,res)=>{
+    // take data form req.body 
+    // validate using username or email 
+    //find the user 
+    //password chck 
+    //if pass matches then generate the access token and  refresh token and send it to user 
+    //send cookie 
+
+    const {username,email,password}=req.body //abhi hume exactly nhi pata ki user ne kya kya bhja h frontenf se toh andaj se we are accepting thes!
+    //now we want atleast one thing username or email so that we can validate so we will kepp a chck here
+    if(!username||!email)
+    {
+        throw new Error("username or email is required")
+    }
+
+    //Now validating the user in the db 
+
+    const user =await User.findOne({
+        $or:[{username},{email}]  //we did these coz we wanted that it should chck ki username ya email se koi h ya nhi
+    })                             //otherwise we would have just do User.findOne(email) if we only wanted to chck email registeres h ya nhi 
+    
+
+    //password chcking time
+
+    
+
+})
+
+export  {registerUser,loginUser};
