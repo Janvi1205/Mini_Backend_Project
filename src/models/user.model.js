@@ -69,7 +69,7 @@ userSchema.pre("save", async function (next) { //pre is a hook which is used to 
     {
         return next();
     }
-    this.password = bcrypt.hash(this.password, 10) //does the password encryption 
+    this.password = await bcrypt.hash(this.password, 10) //does the password encryption 
     next()
 
 })
