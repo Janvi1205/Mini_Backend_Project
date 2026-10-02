@@ -253,6 +253,43 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{ //Created this so that s
 
 })
 
+const changeCurrentPassword=asyncHandler(async(req,res)=>{
+    //now we dont have the headache of chcking or verifying the usr as we have the middleware verifyJWT for that 
 
 
-export  {registerUser,loginUser,LogoutUser,refreshAccessToken};
+    //first take the data from the user
+    const{oldPassword,newPassword}=req.body
+    //now we need the current user id 
+    // as we are using the verifyjwt middleware so we have the user id in req.user._id
+    const user=await User.findById(req.user?._id)
+    const isPasswordCorrect=await user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordCorrect){
+        throw new Error("Invalid old password");
+    }
+
+    user.password=newPassword;
+    await user.save({validateBeforeSave:false});
+
+    return res.send(200)
+    .json(
+        new apiResponse(
+            200,
+            {},
+            "Password changed"
+        )
+    )
+
+})
+
+const getCurrentUser=asyncHandler(async(req,res)=>{  //to get the current user
+    res.send(200)
+    .json(
+        200,
+        req.user  //as we already have the current user in the verifyjwt middleware 
+    )
+})
+
+
+
+export  {registerUser,loginUser,LogoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser};
