@@ -1,6 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js"
 import { User } from "../models/user.model.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
+import { apiResponse } from "../utils/apiResponse.js";
 
 
 const generateAccessAndRefreshToken=async (userId)=>{ //as we will be using this thing multiple time so we are creating this method!
@@ -142,6 +143,38 @@ const loginUser=asyncHandler(async(req,res)=>{
     //now genrate the access and refreshToken 
     const{accessToken,refreshToken}=await generateAccessAndRefreshToken(user._id);
 
+    const loggedInUser=await User.findById(user._id).select("-password -refreshToken") //means send all the things to frontend  just dont send the things written in select
+     
+    //sending cookies
+    const option={ //did this coz cookies can be modified from the frontend so if we dont want to do that and only want to be modified from server  
+        httpOnly:true,   
+        secure:true
+
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,option)
+    .cookie("refreshToken",refreshToken,option)
+    .json(
+         new apiResponse(
+            200,
+            {
+                user:loggedInUser,accessToken,refreshToken
+            },
+            "User logged in successfully"
+         )
+    )
+
+    
+
 })
 
-export  {registerUser,loginUser};
+const LogoutUser=asyncHandler(async(req,res)=>{
+    
+
+})
+
+
+
+export  {registerUser,loginUser,LogoutUser};
