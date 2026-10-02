@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { User } from "../models/user.model.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
 
 const generateAccessAndRefreshToken=async (userId)=>{ //as we will be using this thing multiple time so we are creating this method!
@@ -115,7 +116,7 @@ const loginUser=asyncHandler(async(req,res)=>{
 
     const {username,email,password}=req.body //abhi hume exactly nhi pata ki user ne kya kya bhja h frontenf se toh andaj se we are accepting thes!
     //now we want atleast one thing username or email so that we can validate so we will kepp a chck here
-    if(!username||!email)
+    if(!(username||email))
     {
         throw new Error("username or email is required")
     }
@@ -171,10 +172,87 @@ const loginUser=asyncHandler(async(req,res)=>{
 })
 
 const LogoutUser=asyncHandler(async(req,res)=>{
-    
+     await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+
+            }
+        }
+
+    )
+
+    const option={
+       httpOnly:true,
+       secure:true
+    }
+    return res.status(200)
+    .clearCookie("accessToken",option)
+    .clearCookie("refreshToken",option)
+    .json(
+        new apiResponse(
+            200,
+            {},
+            "User logged Out "
+        )
+    )
+})
+
+const refreshAccessToken=asyncHandler(async(req,res)=>{ //Created this so that sometime if the refrshtoken get expeired and shows loggedout  then automatically  front end dev can refresh the token and then can login instead of telling the user ot login again manually 
+  
+    //first take the refreshtoken from the cookie
+   const incomingRefreshTokenFromUser= req.cookie.refreshToken||req.body.refreshToken //used this req.body also coz user might me usig mobile and seding req from there
+
+
+   if(!incomingRefreshTokenFromUser)
+   {
+    throw new Error("Unauthorized user")
+   }
+
+   //now verify using jwt 
+
+   const decodedToken=jwt.verify( //it need two thing 
+       incomingRefreshTokenFromUser, //token comong from user 
+       process.env.REFRESH_TOKEN_SECRET //actual token saved in the db 
+   )
+
+   //now as we have the refreshtoken with us so we have the user id also so using that we will see the info of the user from the db
+   const user=await User.findById(decodedToken?._id)
+
+   if(!user)
+   {
+    throw new Error("Invalid user")
+   }
+   
+   //as we have the refresh token for each user also saved the db so we have to now chck if its matching witht the incoming token
+   if(incomingRefreshTokenFromUser!==user?.referenceToken)
+   {
+      throw new Error("RefreshToken is expired or used")
+   }
+
+   const option={
+    httpOnly:true,
+    secure:true
+   }
+
+  const{accessToken,newrefreshToken}=await generateAccessAndRefreshToken(user._id)
+
+  return res.send(200)
+  .cookie("accessToken",accessToken,option)
+  .cookie("refreshToken",newrefreshToken,option)
+  .json(
+    new apiResponse(
+        200,
+        {accessToken,referenceToken:newrefreshToken},
+        "Acess token refreshed "
+
+    )
+  )
+
 
 })
 
 
 
-export  {registerUser,loginUser,LogoutUser};
+export  {registerUser,loginUser,LogoutUser,refreshAccessToken};

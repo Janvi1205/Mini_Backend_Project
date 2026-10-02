@@ -1,6 +1,7 @@
 import { Router } from "express";
-import {registerUser} from "../controllers/user.controller.js";
+import {loginUser, LogoutUser, refreshAccessToken, registerUser} from "../controllers/user.controller.js";
 import { upload } from "../middleware/multer.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router=Router();//made the router 
 
@@ -17,5 +18,14 @@ router.route("/register").post(
     ]),
     registerUser
 ) //yaha aa gaya control toh ab agar /api/v1/users iske baad we do /api/v1/users/register then registerUser call ho jayega 
+
+
+router.route("/login").post(loginUser)
+
+//secured routes
+router.route("/logout").post(verifyJWT,LogoutUser); // here verifyJwt if the middleware i created
+//whenever it will go to /logout it has to first got to verifyjwt and then it can run the logoutuser func
+
+router.route("/refresh-token").post(refreshAccessToken)
 
 export default router;
