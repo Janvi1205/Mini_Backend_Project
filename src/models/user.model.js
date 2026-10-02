@@ -76,7 +76,7 @@ userSchema.pre("save", async function (next) { //pre is a hook which is used to 
 
 userSchema.methods.isPasswordCorrect = async function (password) //made this method so that we can check the pass from a bcrpted version 
 {
-    return await bcrypt.compare(password, this.password) //password is coming form the usr and this.password is the saved one 
+    return await bcrypt.compare(password, this.password) //password is coming form the usr and this.password is the saved one in db
 }
 
 userSchema.methods.generateAccessToken = function () {

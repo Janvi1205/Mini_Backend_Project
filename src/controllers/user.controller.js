@@ -2,6 +2,23 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { User } from "../models/user.model.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
 
+
+const generateAccessAndRefreshToken=async (userId)=>{ //as we will be using this thing multiple time so we are creating this method!
+    try {
+        
+       const user= await User.findById(userId);
+       const accessToken =user.generateAccessToken();
+       const refreshToken= user.generateRefreshToken();
+
+       user.refreshToken=refreshToken //we give the accessToken/refreshtoken to the user but we also keep the refreshTOken in our db so that user dont have to login again and agian 
+       await user.save({validateBeforeSave:false}) //means save these without validating as we have already done it 
+       return{accessToken,refreshToken}
+    
+    } catch (error) {
+        throw new Error("Something went wrong while generating the token ")
+        
+    }
+}
 const registerUser = asyncHandler(async (req, res) => {  //as we have already made the utility file so we are simply using it now 
 
     //get user details from frontend
@@ -108,10 +125,22 @@ const loginUser=asyncHandler(async(req,res)=>{
         $or:[{username},{email}]  //we did these coz we wanted that it should chck ki username ya email se koi h ya nhi
     })                             //otherwise we would have just do User.findOne(email) if we only wanted to chck email registeres h ya nhi 
     
+     if(!user)
+     {
+        throw new Error("User does not exist")
+     }
+
 
     //password chcking time
+    const isPassValid=await user.isPasswordCorrect(password)//we are using user instead of User coz user is the thing which i created so it has all the methos which i created in the user.model.js
 
-    
+    if(!isPassValid)
+    {
+        throw new Error("Password is incorrect")
+    }
+
+    //now genrate the access and refreshToken 
+    const{accessToken,refreshToken}=await generateAccessAndRefreshToken(user._id);
 
 })
 
