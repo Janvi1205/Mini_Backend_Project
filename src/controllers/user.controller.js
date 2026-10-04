@@ -379,5 +379,86 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
 
 })
 
+const getUserChannelProfile=asyncHandler(async(req,res)=>{
+    const {username}=req.params //as we take the username from the link 
+
+    if(!username?.trim())
+    {
+         throw new Error("username is missing")
+    }
+
+    const channelName=await User.aggregate([
+        { //pipelines
+           $match:{
+            username:username?.toLowerCase()
+           }
+        },
+        { //finding the subscriber of a particular channel  
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribeTo"
+            }
+        },
+        {
+            $addFields:{
+                subscriberscount:{
+                    $size:"$subscribers"
+                },
+                channelsSubscribedToCount:{
+                    $size:""
+                },
+                isSubscribed:{
+                    $cond:{
+                        if:{$in:[req.user?._id,"$subscibers.subscriber"]},
+                        then:true,
+                        else:false
+                    }
+                }
+                    
+
+
+            }
+        },
+        {
+            $project:{
+                fullname:1,
+                username:1,
+                subscriberscount:1,
+                 channelsSubscribedToCount:1,
+                 isSubscribed:1,
+                 avatar:1,
+                 coverImage:1,
+                 email:1
+            }
+        }
+
+    ])
+
+    if(!channel?.length)
+    {
+
+        throw new Error("CHANNEL DOSENT EXIST")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new apiResponse(
+            200,
+            channel[0],
+            "user channel fetched successfully"
+        )
+    )
+})
 
 export { registerUser, loginUser, LogoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountdetails,changeAvatarImage,changeCoverImage };
