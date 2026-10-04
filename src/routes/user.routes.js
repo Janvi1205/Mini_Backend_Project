@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {loginUser, LogoutUser, refreshAccessToken, registerUser} from "../controllers/user.controller.js";
+import {changeAvatarImage, changeCoverImage, changeCurrentPassword, getCurrentUser, getUserChannelProfile, loginUser, LogoutUser, refreshAccessToken, registerUser} from "../controllers/user.controller.js";
 import { upload } from "../middleware/multer.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -27,5 +27,40 @@ router.route("/logout").post(verifyJWT,LogoutUser); // here verifyJwt if the mid
 //whenever it will go to /logout it has to first got to verifyjwt and then it can run the logoutuser func
 
 router.route("/refresh-token").post(refreshAccessToken)
+
+//// Get current logged-in user
+router.route("/current-user").get(
+    verifyJWT,
+    getCurrentUser
+)
+
+//// Change password
+router.route("/change-password").post(
+    verifyJWT,
+    changeCurrentPassword
+)
+
+//Update account details
+
+router.route("/avatar").patch(
+    verifyJWT,
+    upload.single("avatar"),
+    changeAvatarImage
+);
+
+// Update cover image
+router.route("/cover-image").patch(
+    verifyJWT,
+    upload.single("coverImage"),
+    changeCoverImage
+);
+
+// Get a user's channel profile
+router.route("/c/:username").get(
+    verifyJWT,
+    getUserChannelProfile
+);
+
+
 
 export default router;
