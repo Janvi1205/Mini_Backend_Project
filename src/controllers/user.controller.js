@@ -396,33 +396,33 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
         { //finding the subscriber of a particular channel  
             $lookup:{
                 from:"subscriptions",
-                localField:"_id",
-                foreignField:"channel",
-                as:"subscribers"
+                localField:"_id", // //Janvi's ID from the users collection.
+                foreignField:"channel",//the channel field in the subscriptions collection.
+                as:"subscribers"//stores all matching subscription documents in an array named subscribers
             }
         },
-        {
+        {//Which channels does Janvi subscribe to?
             $lookup:{
                 from:"subscriptions",
                 localField:"_id",
-                foreignField:"subscriber",
-                as:"subscribeTo"
+                foreignField:"subscriber", //
+                as:"subscribeTo" //For example, if Janvi subscribes to Rahul and Priya, the subscribeTo array will contain those two subscription documents.
             }
         },
         {
             $addFields:{
                 subscriberscount:{
-                    $size:"$subscribers"
+                    $size:"$subscribers" //$size counts the elements inside an array. The $ before subscribers means to read that field from the current document.
                 },
                 channelsSubscribedToCount:{
-                    $size:""
+                    $size:"$subscribeTo"// //This counts the channels Janvi follows
                 },
                 isSubscribed:{
                     $cond:{
-                        if:{$in:[req.user?._id,"$subscibers.subscriber"]},
-                        then:true,
-                        else:false
-                    }
+                        if:{$in:[req.user?._id,"$subscribers.subscriber"]}, //"$subscribers.subscriber" represents the subscriber IDs found in the subscribers array.
+                        then:true,                                        //$in checks whether the logged-in user's ID exists in that list.
+                        else:false                                       //$cond returns true if it exists and false otherwise.
+                    }                                          
                 }
                     
 
@@ -430,7 +430,7 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
             }
         },
         {
-            $project:{
+            $project:{ //This stage decides which fields should appear in the final result.
                 fullname:1,
                 username:1,
                 subscriberscount:1,
@@ -444,7 +444,7 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
 
     ])
 
-    if(!channel?.length)
+    if(!channelName?.length)
     {
 
         throw new Error("CHANNEL DOSENT EXIST")
@@ -461,4 +461,4 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
     )
 })
 
-export { registerUser, loginUser, LogoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountdetails,changeAvatarImage,changeCoverImage };
+export { registerUser, loginUser, LogoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountdetails,changeAvatarImage,changeCoverImage,getUserChannelProfile };
