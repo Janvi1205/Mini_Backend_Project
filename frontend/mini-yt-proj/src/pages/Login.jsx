@@ -6,6 +6,42 @@ const Login = () => {
   const [username, setusername] = useState("");
   const [password, setpassword] = useState("");
 
+
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/users/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "Login failed");
+      }
+
+      console.log("Login successful:", data);
+
+      // Later, navigate to your home page here.
+    } catch (err) {
+      console.error("Login error:", err.message);
+    }
+  };
+
+
   return (
     <div className="bg-black min-h-screen flex justify-center items-center">
 
@@ -16,10 +52,7 @@ const Login = () => {
         </h1>
 
         <form className="flex flex-col gap-4 "
-          onSubmit={(e) => {
-            e.preventDefault();
-            console.log(username, password);
-          }}>
+          onSubmit={handleLogin}>
 
           <div className="flex flex-col gap-2">
             <label className="text-black font-medium">
