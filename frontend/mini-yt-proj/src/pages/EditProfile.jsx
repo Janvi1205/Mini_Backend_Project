@@ -13,6 +13,7 @@ const EditProfile = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const[password,setPassword]=useState("");
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -120,6 +121,40 @@ const EditProfile = () => {
         alert("Cover image updated successfully!");
     };
 
+    const updatePassword=async()=>{
+        if(!password)
+        {
+            alert("New pass is required");
+        }
+
+        const response=await fetch(
+            `${import.meta.env.VITE_API_URL}/api/v1/users/change-password`,
+            {
+                method:"PATCH",
+                credentials:"include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body:JSON.stringify({
+                    password:password
+                })
+            }
+        )
+
+        const result=await response.json();
+
+        if(!result.ok)
+        {
+            throw new Error(
+                result.message || "Failed to update the password"
+            ); 
+        }
+
+        setPassword(response.data.password||"")
+
+        alert("Password updated successfully!");
+    }
+
     const updateAccountDetails = async () => {
         if (!fullname.trim() || !email.trim()) {
             throw new Error("Full name and email are required");
@@ -176,10 +211,15 @@ const EditProfile = () => {
                 await updateCoverImage();
                 setCoverImage(null);
             }
+            if(password)
+            {
+                await updatePassword();
+            }
 
             if (!detailsChanged && !avatar && !coverImage) {
                 alert("No changes to save.");
             }
+
 
             // Navigate to Profile after successfully saving all changes
             navigate("/profile");
