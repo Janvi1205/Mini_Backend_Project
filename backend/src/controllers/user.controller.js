@@ -276,13 +276,18 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 })
 
-const getCurrentUser = asyncHandler(async (req, res) => {  //to get the current user
-    res.send(200)
-        .json(
-            200,
-            req.user  //as we already have the current user in the verifyjwt middleware 
-        )
-})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    return res
+        .status(200)
+        .json({
+            statusCode: 200,
+            data: req.user,
+            message: "Current user fetched successfully",
+            success: true,
+        });
+});
+
 
 
 const updateAccountdetails = asyncHandler(async (req, res) => { //u can give access to user to  change whaterver u want 
@@ -295,7 +300,7 @@ const updateAccountdetails = asyncHandler(async (req, res) => { //u can give acc
         throw new Error("All field are required")
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -308,15 +313,13 @@ const updateAccountdetails = asyncHandler(async (req, res) => { //u can give acc
 
     ).select("-password")
 
-    return res.send(200)
-        .json(
-            new apiResponse(
-                200,
-                user,
-                "Account details updated "
-            )
-        )
-
+    
+    return res.status(200).json({
+        statusCode: 200,
+        data: user,
+        message: "Account details updated successfully",
+        success: true,
+    });
 
 
 })
@@ -337,16 +340,23 @@ const changeCoverImage = asyncHandler(async (req, res) => {
 
     }
 
-    await User.findByIdAndUpdate(
+    const updatedUser=await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                coverImage:coverImage.url
+            $set: {
+                coverImage: coverImage.url
             }
         },
-        {new:true}
+        { new: true }
 
     ).select("-password")
+
+    return res.status(200).json({
+        statusCode: 200,
+        data: updatedUser,
+        message: "Cover image updated successfully",
+        success: true,
+    });
 
 
 })
@@ -365,100 +375,105 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
 
     }
 
-    await User.findByIdAndUpdate(
+    const updatedUser=await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                Avatar:Avatar.url
+            $set: {
+                avatar: Avatar.url
             }
         },
-        {new:true}
+        { new: true }
 
     ).select("-password")
+
+    return res.status(200).json({
+        statusCode: 200,
+        data: updatedUser,
+        message: "Avatar updated successfully",
+        success: true,
+    });
 
 
 })
 
-const getUserChannelProfile=asyncHandler(async(req,res)=>{
-    const {username}=req.params //as we take the username from the link 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params //as we take the username from the link 
 
-    if(!username?.trim())
-    {
-         throw new Error("username is missing")
+    if (!username?.trim()) {
+        throw new Error("username is missing")
     }
 
-    const channelName=await User.aggregate([
+    const channelName = await User.aggregate([
         { //pipelines
-           $match:{
-            username:username?.toLowerCase()
-           }
+            $match: {
+                username: username?.toLowerCase()
+            }
         },
         { //finding the subscriber of a particular channel  
-            $lookup:{
-                from:"subscriptions",
-                localField:"_id", // //Janvi's ID from the users collection.
-                foreignField:"channel",//the channel field in the subscriptions collection.
-                as:"subscribers"//stores all matching subscription documents in an array named subscribers
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id", // //Janvi's ID from the users collection.
+                foreignField: "channel",//the channel field in the subscriptions collection.
+                as: "subscribers"//stores all matching subscription documents in an array named subscribers
             }
         },
         {//Which channels does Janvi subscribe to?
-            $lookup:{
-                from:"subscriptions",
-                localField:"_id",
-                foreignField:"subscriber", //
-                as:"subscribeTo" //For example, if Janvi subscribes to Rahul and Priya, the subscribeTo array will contain those two subscription documents.
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber", //
+                as: "subscribeTo" //For example, if Janvi subscribes to Rahul and Priya, the subscribeTo array will contain those two subscription documents.
             }
         },
         {
-            $addFields:{
-                subscriberscount:{
-                    $size:"$subscribers" //$size counts the elements inside an array. The $ before subscribers means to read that field from the current document.
+            $addFields: {
+                subscriberscount: {
+                    $size: "$subscribers" //$size counts the elements inside an array. The $ before subscribers means to read that field from the current document.
                 },
-                channelsSubscribedToCount:{
-                    $size:"$subscribeTo"// //This counts the channels Janvi follows
+                channelsSubscribedToCount: {
+                    $size: "$subscribeTo"// //This counts the channels Janvi follows
                 },
-                isSubscribed:{
-                    $cond:{
-                        if:{$in:[req.user?._id,"$subscribers.subscriber"]}, //"$subscribers.subscriber" represents the subscriber IDs found in the subscribers array.
-                        then:true,                                        //$in checks whether the logged-in user's ID exists in that list.
-                        else:false                                       //$cond returns true if it exists and false otherwise.
-                    }                                          
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] }, //"$subscribers.subscriber" represents the subscriber IDs found in the subscribers array.
+                        then: true,                                        //$in checks whether the logged-in user's ID exists in that list.
+                        else: false                                       //$cond returns true if it exists and false otherwise.
+                    }
                 }
-                    
+
 
 
             }
         },
         {
-            $project:{ //This stage decides which fields should appear in the final result.
-                fullname:1,
-                username:1,
-                subscriberscount:1,
-                 channelsSubscribedToCount:1,
-                 isSubscribed:1,
-                 avatar:1,
-                 coverImage:1,
-                 email:1
+            $project: { //This stage decides which fields should appear in the final result.
+                fullname: 1,
+                username: 1,
+                subscriberscount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
             }
         }
 
     ])
 
-    if(!channelName?.length)
-    {
+    if (!channelName?.length) {
 
         throw new Error("CHANNEL DOSENT EXIST")
     }
 
     return res
-    .status(200)
-    .json(
-        new apiResponse(
-            200,
-            channel[0],
-            "user channel fetched successfully"
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                channel[0],
+                "user channel fetched successfully"
+            )
         )
-    )
 })
 
-export { registerUser, loginUser, LogoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountdetails,changeAvatarImage,changeCoverImage,getUserChannelProfile };
+export { registerUser, loginUser, LogoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountdetails, changeAvatarImage, changeCoverImage, getUserChannelProfile };
