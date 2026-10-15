@@ -24,7 +24,7 @@ const SignIn = () => {
       return
     }
 
-    const formData = new FormData()
+    const formData = new FormData()       //as we have images and text both so we are using formdata instead of json.stringify
 
     formData.append("fullname", fullname)
     formData.append("username", username)
